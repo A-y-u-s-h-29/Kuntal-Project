@@ -4,8 +4,9 @@
   "description": "Backend for KUNTAL AGRO AGENCIES e-commerce",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+  "prod": "node server.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
