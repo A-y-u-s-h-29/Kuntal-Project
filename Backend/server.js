@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Enable CORS - Allow all origins for development
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "https://gleeful-custard-ac881f.netlify.app",
   credentials: true
 }));
 
