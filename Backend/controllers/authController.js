@@ -2,23 +2,22 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { validationResult } = require('express-validator');
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
+// =======================
+// REGISTER USER
+// =======================
 exports.register = async (req, res) => {
   try {
-    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        errors: errors.array() 
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
       });
     }
 
-    const { name, email, password, phone, address } = req.body;
+    let { name, email, password, phone, address } = req.body;
+    email = email.toLowerCase().trim();
 
-    // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({
@@ -27,7 +26,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create user
     const user = await User.create({
       name,
       email,
@@ -37,7 +35,6 @@ exports.register = async (req, res) => {
       isProfileComplete: true
     });
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -61,16 +58,15 @@ exports.register = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+// =======================
+// LOGIN USER
+// =======================
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    email = email.toLowerCase().trim();
 
-    // Check if user exists
     const user = await User.findOne({ email }).select('+password');
-    
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -78,17 +74,14 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check password
-    const isPasswordMatch = await user.comparePassword(password);
-    
-    if (!isPasswordMatch) {
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.status(200).json({
@@ -112,28 +105,29 @@ exports.login = async (req, res) => {
   }
 };
 
-// @desc    Owner login (special login with .env credentials)
-// @route   POST /api/auth/owner-login
-// @access  Public
+// =======================
+// OWNER LOGIN
+// =======================
 exports.ownerLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    email = email.toLowerCase().trim();
 
-    // Check against .env credentials
-    if (email !== process.env.OWNER_EMAIL || password !== process.env.OWNER_PASSWORD) {
+    if (
+      email !== process.env.OWNER_EMAIL.toLowerCase() ||
+      password !== process.env.OWNER_PASSWORD
+    ) {
       return res.status(401).json({
         success: false,
         message: 'Invalid owner credentials'
       });
     }
 
-    // Check if owner user exists, if not create one
-    let owner = await User.findOne({ email: process.env.OWNER_EMAIL });
-    
+    let owner = await User.findOne({ email });
     if (!owner) {
       owner = await User.create({
         name: 'Owner',
-        email: process.env.OWNER_EMAIL,
+        email,
         password: process.env.OWNER_PASSWORD,
         phone: '0000000000',
         address: 'Owner Address',
@@ -142,7 +136,6 @@ exports.ownerLogin = async (req, res) => {
       });
     }
 
-    // Generate token
     const token = generateToken(owner._id);
 
     res.status(200).json({
@@ -166,13 +159,13 @@ exports.ownerLogin = async (req, res) => {
   }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
+// =======================
+// GET CURRENT USER
+// =======================
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    
+
     res.status(200).json({
       success: true,
       user: {
@@ -193,24 +186,24 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/auth/update-profile
-// @access  Private
+// =======================
+// UPDATE PROFILE
+// =======================
 exports.updateProfile = async (req, res) => {
   try {
     const { name, phone, address } = req.body;
-    
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { 
-        name, 
-        phone, 
+      {
+        name,
+        phone,
         address,
-        isProfileComplete: true 
+        isProfileComplete: true
       },
-      { 
+      {
         new: true,
-        runValidators: true 
+        runValidators: true
       }
     );
 
@@ -234,19 +227,12 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// @desc    Logout user
-// @route   POST /api/auth/logout
-// @access  Private
+// =======================
+// LOGOUT
+// =======================
 exports.logout = async (req, res) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };
